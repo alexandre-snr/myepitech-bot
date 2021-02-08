@@ -6,29 +6,7 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
   logging: process.env.NODE_ENV !== 'production' ? console.log : false,
 });
 
-const Registration = sequelize.define('registration', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  twofactor: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-}, {
-  tableName: 'registrations',
-  timestamps: false,
-});
+const Registration = require('./models/registrations')(sequelize, DataTypes);
 
 (async () => {
   try {

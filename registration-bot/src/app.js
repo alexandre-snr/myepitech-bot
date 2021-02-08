@@ -1,7 +1,7 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const {
-  WAITING_FOR_EMAIL, WAITING_FOR_PASSWORD, WAITING_FOR_2FA
+  WAITING_FOR_EMAIL, WAITING_FOR_PASSWORD, WAITING_FOR_2FA,
 } = require('./constants');
 const { isEmailAvailable, addRegistration } = require('./db');
 

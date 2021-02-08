@@ -1,11 +1,11 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const {
-  WAITING_FOR_EMAIL, WAITING_FOR_PASSWORD, WAITING_FOR_2FA, REGISTERED,
+  WAITING_FOR_EMAIL, WAITING_FOR_PASSWORD, WAITING_FOR_2FA
 } = require('./constants');
+const { isEmailAvailable, addRegistration } = require('./db');
 
 const QAcache = [];
-const users = [];
 
 console.log('starting bot.');
 
@@ -21,7 +21,7 @@ bot.onText(/\/start/, (msg) => {
   });
 });
 
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
   if (msg.text == null || msg.text.startsWith('/')) return;
 
   const QAindex = QAcache.findIndex((x) => x.id === msg.chat.id);
@@ -32,6 +32,11 @@ bot.on('message', (msg) => {
 
   switch (QAcache[QAindex].state) {
     case WAITING_FOR_EMAIL:
+      if (!(await isEmailAvailable(msg.text))) {
+        bot.sendMessage(msg.chat.id, 'This email is already used.');
+        return;
+      }
+
       bot.sendMessage(msg.chat.id, 'Please type in your password.');
       QAcache[QAindex] = {
         ...QAcache[QAindex],
@@ -51,10 +56,9 @@ bot.on('message', (msg) => {
 
     case WAITING_FOR_2FA:
       bot.sendMessage(msg.chat.id, 'You are now registered.');
-      users.push({
+      await addRegistration({
         ...QAcache[QAindex],
         '2fa': msg.text,
-        state: REGISTERED,
       });
       QAcache.splice(QAindex, 1);
       break;

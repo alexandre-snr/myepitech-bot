@@ -20,7 +20,7 @@ func Registrations(db XODB) ([]*Registration, error) {
 	// load results
 	res := []*Registration{}
 	for q.Next() {
-		r := Registration{}
+		r := Registration{_exists: true}
 
 		// scan
 		err = q.Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck, &r.Chatid)

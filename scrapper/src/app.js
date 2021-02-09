@@ -1,8 +1,8 @@
+require('dotenv').config();
 const twofactor = require('node-2fa');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const moment = require('moment');
-const TelegramBot = require('node-telegram-bot-api');
 
 const user = process.argv[2];
 const pwd = process.argv[3];
@@ -11,14 +11,17 @@ const lastCheck = moment(process.argv[5]);
 const chatId = process.argv[6];
 const year = '2020';
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN || '', {
-  polling: true,
-});
+const args = process.env.NODE_ENV === 'production' ? [
+  '--no-sandbox',
+  '--disable-setuid-sandbox']
+  : [];
 
 (async () => {
-  console.log('starting for', user);
+  console.log('starting scrapping for', user);
 
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args,
+  });
   const page = await browser.newPage();
   await page.goto('https://my.epitech.eu/');
   await page.click('.mdl-button');
@@ -46,6 +49,8 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN || '', {
   await page.close();
   await browser.close();
 
+  console.log('got jwt.');
+
   const res = await fetch(`https://api.epitest.eu/me/${year}`, {
     headers: {
       Authorization: `Bearer ${jwt}`,
@@ -53,10 +58,21 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN || '', {
   });
 
   const results = await res.json();
-  const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
+  console.log('got', results.length, results.length > 1 ? 'results.' : 'result.');
 
-  newResults.forEach((result) => {
-    bot.sendMessage(chatId, `New results for project "${result.project.name}"`);
-  });
+  const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
+  await Promise.all(newResults.map(async (result) => {
+    await fetch(process.env.MESSAGE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatId,
+        message: `New results for ${result.project.name}`,
+      }),
+    });
+  }));
+
+  console.log(newResults.length, newResults.length > 1 ? 'results' : 'result', 'sent.');
+
   process.exit(0);
 })();

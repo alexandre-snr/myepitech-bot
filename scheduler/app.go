@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/jasonlvhit/gocron"
 	_ "github.com/joho/godotenv/autoload"
@@ -21,11 +22,10 @@ import (
 func main() {
 	log.Println("starting scheduler.")
 
+	task()
 	if os.Getenv("ENV") == "production" {
 		gocron.Every(5).Minutes().Do(task)
 		<-gocron.Start()
-	} else {
-		task()
 	}
 }
 
@@ -67,7 +67,8 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 	resp, err := cli.ContainerCreate(context.Background(), &container.Config{
 		Image: os.Getenv("SCRAP_IMAGE"),
 		Cmd: []string{
-			os.Getenv("SCRAP_COMMAND"),
+			"node",
+			".",
 			reg.Email,
 			reg.Password,
 			reg.Twofactor,
@@ -76,9 +77,17 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 		},
 		Tty: false,
 		Env: os.Environ(),
-	}, nil, nil, nil, "")
+	}, nil, &network.NetworkingConfig{}, nil, "")
 	if err != nil {
 		return err
+	}
+
+	net := os.Getenv("SCRAP_NETWORK")
+	if net != "" {
+		err = cli.NetworkConnect(context.Background(), net, resp.ID, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := cli.ContainerStart(
@@ -88,7 +97,5 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 	}
 
 	reg.Lastcheck = time.Now()
-	reg.Save(db)
-
-	return nil
+	return reg.Update(db)
 }

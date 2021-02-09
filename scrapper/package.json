@@ -1,13 +1,13 @@
 {
   "name": "scrapper",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/app.js",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "moment": "^2.29.1",
     "node-2fa": "^2.0.0",
     "node-fetch": "^2.6.1",
-    "node-telegram-bot-api": "^0.51.0",
     "puppeteer": "^5.5.0",
     "tslib": "^2.1.0"
   },

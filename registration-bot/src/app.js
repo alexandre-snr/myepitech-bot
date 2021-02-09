@@ -1,5 +1,7 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
+const express = require('express');
+const bodyParser = require('body-parser');
 const {
   WAITING_FOR_EMAIL, WAITING_FOR_PASSWORD, WAITING_FOR_2FA,
 } = require('./constants');
@@ -56,6 +58,7 @@ bot.on('message', async (msg) => {
 
     case WAITING_FOR_2FA:
       bot.sendMessage(msg.chat.id, 'You are now registered.');
+      console.log(QAcache[QAindex].email, 'registered.');
       await addRegistration({
         ...QAcache[QAindex],
         twofactor: msg.text,
@@ -68,4 +71,25 @@ bot.on('message', async (msg) => {
       bot.sendMessage(msg.chat.id, 'Unknown state. Please use /start to begin.');
       break;
   }
+});
+
+const app = express();
+
+app.use(bodyParser.json({
+  extended: false,
+}));
+
+app.post('/send', (req, res) => {
+  if (typeof req.body.chatId !== 'number' && typeof req.body.message !== 'string') {
+    console.log('invalid request received.');
+    res.sendStatus(400);
+    return;
+  }
+  console.log('sent message to', req.body.chatId, '.');
+  bot.sendMessage(req.body.chatId, req.body.message);
+  res.sendStatus(200);
+});
+
+app.listen(8080, () => {
+  console.log('api listening on port 8080.');
 });

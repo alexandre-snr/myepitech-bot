@@ -3,6 +3,8 @@ const twofactor = require('node-2fa');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const moment = require('moment');
+const { createNodeRedisClient } = require('handy-redis');
+const jsonwebtoken = require('jsonwebtoken');
 
 const user = process.argv[2];
 const pwd = process.argv[3];
@@ -11,17 +13,28 @@ const lastCheck = moment(process.argv[5]);
 const chatId = process.argv[6];
 const year = '2020';
 
-const args = process.env.NODE_ENV === 'production' ? [
-  '--no-sandbox',
-  '--disable-setuid-sandbox']
-  : [];
+const isJwtValid = (jwt) => {
+  const dec = jsonwebtoken.decode(jwt);
+  return (dec.exp * 1000 > new Date().getTime());
+};
 
-(async () => {
-  console.log('starting scrapping for', user);
+const setJwtCache = async (jwt) => {
+  const client = createNodeRedisClient({
+    url: process.env.REDIS_URL,
+  });
+  return client.set(user, jwt);
+};
+
+const grabJwt = async () => {
+  const args = process.env.NODE_ENV === 'production' ? [
+    '--no-sandbox',
+    '--disable-setuid-sandbox']
+    : [];
 
   const browser = await puppeteer.launch({
     args,
   });
+
   const page = await browser.newPage();
   await page.goto('https://my.epitech.eu/');
   await page.click('.mdl-button');
@@ -49,28 +62,58 @@ const args = process.env.NODE_ENV === 'production' ? [
   await page.close();
   await browser.close();
 
-  console.log('got jwt.');
+  await setJwtCache(jwt);
 
+  console.log('jwt grabbed from my.epitech.eu.');
+
+  return jwt;
+};
+
+const grabJwtFromCache = async () => {
+  const client = createNodeRedisClient({
+    url: process.env.REDIS_URL,
+  });
+  if (!(await client.exists(user))) return null;
+  const jwt = await client.get(user);
+  if (!isJwtValid(jwt)) return null;
+  console.log('jwt grabbed from cache.');
+  return jwt;
+};
+
+const fetchResults = async (jwt) => {
   const res = await fetch(`https://api.epitest.eu/me/${year}`, {
     headers: {
       Authorization: `Bearer ${jwt}`,
     },
   });
 
-  const results = await res.json();
+  return res.json();
+};
+
+(async () => {
+  console.log('starting scrapping for', user);
+
+  let jwt = await grabJwtFromCache();
+  if (jwt == null) jwt = await grabJwt();
+  const results = await fetchResults(jwt);
+
   console.log('got', results.length, results.length > 1 ? 'results.' : 'result.');
 
   const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
-  await Promise.all(newResults.map(async (result) => {
-    await fetch(process.env.MESSAGE_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chatId,
-        message: `New results for ${result.project.name}`,
-      }),
-    });
-  }));
+  if (newResults.length === 0) {
+    console.log('no new results.');
+    return;
+  }
+
+  const message = `New results:${newResults.reduce((acc, val) => `${acc}\n- ${val.project.name}`, '')}`;
+  await fetch(process.env.MESSAGE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chatId,
+      message,
+    }),
+  });
 
   console.log(newResults.length, newResults.length > 1 ? 'results' : 'result', 'sent.');
 

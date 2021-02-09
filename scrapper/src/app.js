@@ -1,11 +1,15 @@
 const twofactor = require('node-2fa');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
+const moment = require('moment');
 
 const user = process.argv[2];
 const pwd = process.argv[3];
 const token = process.argv[4];
+const lastCheck = moment(process.argv[5]);
 const year = '2020';
+
+console.log(lastCheck.toString());
 
 (async () => {
     const browser = await puppeteer.launch({
@@ -41,7 +45,9 @@ const year = '2020';
             'Authorization': 'Bearer ' + jwt,
         }
     });
-    console.log(await res.json());
+
+    const results = await res.json();
+    const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
 
     await browser.close();
  })();

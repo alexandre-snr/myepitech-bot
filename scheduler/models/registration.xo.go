@@ -5,14 +5,16 @@ package models
 
 import (
 	"errors"
+	"time"
 )
 
 // Registration represents a row from 'public.registrations'.
 type Registration struct {
-	ID        int    `json:"id"`        // id
-	Email     string `json:"email"`     // email
-	Password  string `json:"password"`  // password
-	Twofactor string `json:"twofactor"` // twofactor
+	ID        int       `json:"id"`        // id
+	Email     string    `json:"email"`     // email
+	Password  string    `json:"password"`  // password
+	Twofactor string    `json:"twofactor"` // twofactor
+	Lastcheck time.Time `json:"lastcheck"` // lastcheck
 
 	// xo fields
 	_exists, _deleted bool
@@ -39,14 +41,14 @@ func (r *Registration) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.registrations (` +
-		`email, password, twofactor` +
+		`email, password, twofactor, lastcheck` +
 		`) VALUES (` +
-		`$1, $2, $3` +
+		`$1, $2, $3, $4` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, r.Email, r.Password, r.Twofactor)
-	err = db.QueryRow(sqlstr, r.Email, r.Password, r.Twofactor).Scan(&r.ID)
+	XOLog(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck)
+	err = db.QueryRow(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck).Scan(&r.ID)
 	if err != nil {
 		return err
 	}
@@ -73,14 +75,14 @@ func (r *Registration) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.registrations SET (` +
-		`email, password, twofactor` +
+		`email, password, twofactor, lastcheck` +
 		`) = ( ` +
-		`$1, $2, $3` +
-		`) WHERE id = $4`
+		`$1, $2, $3, $4` +
+		`) WHERE id = $5`
 
 	// run query
-	XOLog(sqlstr, r.Email, r.Password, r.Twofactor, r.ID)
-	_, err = db.Exec(sqlstr, r.Email, r.Password, r.Twofactor, r.ID)
+	XOLog(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck, r.ID)
+	_, err = db.Exec(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck, r.ID)
 	return err
 }
 
@@ -106,18 +108,18 @@ func (r *Registration) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.registrations (` +
-		`id, email, password, twofactor` +
+		`id, email, password, twofactor, lastcheck` +
 		`) VALUES (` +
-		`$1, $2, $3, $4` +
+		`$1, $2, $3, $4, $5` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, email, password, twofactor` +
+		`id, email, password, twofactor, lastcheck` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.email, EXCLUDED.password, EXCLUDED.twofactor` +
+		`EXCLUDED.id, EXCLUDED.email, EXCLUDED.password, EXCLUDED.twofactor, EXCLUDED.lastcheck` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, r.ID, r.Email, r.Password, r.Twofactor)
-	_, err = db.Exec(sqlstr, r.ID, r.Email, r.Password, r.Twofactor)
+	XOLog(sqlstr, r.ID, r.Email, r.Password, r.Twofactor, r.Lastcheck)
+	_, err = db.Exec(sqlstr, r.ID, r.Email, r.Password, r.Twofactor, r.Lastcheck)
 	if err != nil {
 		return err
 	}
@@ -166,7 +168,7 @@ func RegistrationByEmail(db XODB, email string) (*Registration, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, email, password, twofactor ` +
+		`id, email, password, twofactor, lastcheck ` +
 		`FROM public.registrations ` +
 		`WHERE email = $1`
 
@@ -176,7 +178,7 @@ func RegistrationByEmail(db XODB, email string) (*Registration, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, email).Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor)
+	err = db.QueryRow(sqlstr, email).Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +194,7 @@ func RegistrationByID(db XODB, id int) (*Registration, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, email, password, twofactor ` +
+		`id, email, password, twofactor, lastcheck ` +
 		`FROM public.registrations ` +
 		`WHERE id = $1`
 
@@ -202,7 +204,7 @@ func RegistrationByID(db XODB, id int) (*Registration, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor)
+	err = db.QueryRow(sqlstr, id).Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck)
 	if err != nil {
 		return nil, err
 	}

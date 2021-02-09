@@ -28,6 +28,7 @@ const addRegistration = async (details) => Registration.create({
   email: details.email,
   password: details.password,
   twofactor: details['2fa'],
+  lastcheck: Date.now(),
 });
 
 module.exports = {

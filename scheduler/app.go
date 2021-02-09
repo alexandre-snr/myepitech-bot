@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"os"
 	"scheduler/models"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -51,14 +53,14 @@ func triggerAll() error {
 	}
 
 	for _, r := range reg {
-		if err = triggerOne(cli, r); err != nil {
+		if err = triggerOne(db, cli, r); err != nil {
 			log.Println(err)
 		}
 	}
 	return nil
 }
 
-func triggerOne(cli *client.Client, reg *models.Registration) error {
+func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error {
 	log.Println("starting container for", reg.Email)
 
 	resp, err := cli.ContainerCreate(context.Background(), &container.Config{
@@ -68,6 +70,7 @@ func triggerOne(cli *client.Client, reg *models.Registration) error {
 			reg.Email,
 			reg.Password,
 			reg.Twofactor,
+			reg.Lastcheck.Format(time.RFC3339),
 		},
 		Tty: false,
 		Env: os.Environ(),
@@ -81,6 +84,9 @@ func triggerOne(cli *client.Client, reg *models.Registration) error {
 		types.ContainerStartOptions{}); err != nil {
 		return err
 	}
+
+	reg.Lastcheck = time.Now()
+	reg.Save(db)
 
 	return nil
 }

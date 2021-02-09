@@ -19,6 +19,10 @@ module.exports = function(sequelize, DataTypes) {
     twofactor: {
       type: DataTypes.STRING(256),
       allowNull: false
+    },
+    lastcheck: {
+      type: DataTypes.DATE,
+      allowNull: false
     }
   }, {
     sequelize,

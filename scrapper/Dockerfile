@@ -15,8 +15,6 @@ RUN apk add --no-cache \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-RUN yarn add puppeteer@5.2.1
-
 RUN addgroup -S pptruser && adduser -S -g pptruser pptruser \
     && mkdir -p /usr/src/app \
     && chown -R pptruser:pptruser /usr/src/app

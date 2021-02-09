@@ -27,7 +27,8 @@ const isEmailAvailable = async (email) => (await Registration.count({
 const addRegistration = async (details) => Registration.create({
   email: details.email,
   password: details.password,
-  twofactor: details['2fa'],
+  twofactor: details.twofactor,
+  chatid: details.chatid,
   lastcheck: Date.now(),
 });
 

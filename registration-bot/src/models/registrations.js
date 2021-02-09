@@ -9,8 +9,11 @@ module.exports = function(sequelize, DataTypes) {
     },
     email: {
       type: DataTypes.STRING(256),
-      allowNull: false,
-      unique: "registrations_email_key"
+      allowNull: false
+    },
+    chatid: {
+      type: DataTypes.BIGINT,
+      allowNull: false
     },
     password: {
       type: DataTypes.STRING(256),
@@ -30,13 +33,6 @@ module.exports = function(sequelize, DataTypes) {
     schema: 'public',
     timestamps: false,
     indexes: [
-      {
-        name: "registrations_email_key",
-        unique: true,
-        fields: [
-          { name: "email" },
-        ]
-      },
       {
         name: "registrations_pkey",
         unique: true,

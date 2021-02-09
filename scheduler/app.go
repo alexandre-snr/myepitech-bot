@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"scheduler/models"
+	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -71,6 +72,7 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 			reg.Password,
 			reg.Twofactor,
 			reg.Lastcheck.Format(time.RFC3339),
+			strconv.FormatInt(reg.Chatid, 10),
 		},
 		Tty: false,
 		Env: os.Environ(),

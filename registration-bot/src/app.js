@@ -58,7 +58,8 @@ bot.on('message', async (msg) => {
       bot.sendMessage(msg.chat.id, 'You are now registered.');
       await addRegistration({
         ...QAcache[QAindex],
-        '2fa': msg.text,
+        twofactor: msg.text,
+        chatid: msg.chat.id,
       });
       QAcache.splice(QAindex, 1);
       break;

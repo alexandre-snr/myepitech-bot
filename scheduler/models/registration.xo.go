@@ -12,6 +12,7 @@ import (
 type Registration struct {
 	ID        int       `json:"id"`        // id
 	Email     string    `json:"email"`     // email
+	Chatid    int64     `json:"chatid"`    // chatid
 	Password  string    `json:"password"`  // password
 	Twofactor string    `json:"twofactor"` // twofactor
 	Lastcheck time.Time `json:"lastcheck"` // lastcheck
@@ -41,14 +42,14 @@ func (r *Registration) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.registrations (` +
-		`email, password, twofactor, lastcheck` +
+		`email, chatid, password, twofactor, lastcheck` +
 		`) VALUES (` +
-		`$1, $2, $3, $4` +
+		`$1, $2, $3, $4, $5` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck)
-	err = db.QueryRow(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck).Scan(&r.ID)
+	XOLog(sqlstr, r.Email, r.Chatid, r.Password, r.Twofactor, r.Lastcheck)
+	err = db.QueryRow(sqlstr, r.Email, r.Chatid, r.Password, r.Twofactor, r.Lastcheck).Scan(&r.ID)
 	if err != nil {
 		return err
 	}
@@ -75,14 +76,14 @@ func (r *Registration) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.registrations SET (` +
-		`email, password, twofactor, lastcheck` +
+		`email, chatid, password, twofactor, lastcheck` +
 		`) = ( ` +
-		`$1, $2, $3, $4` +
-		`) WHERE id = $5`
+		`$1, $2, $3, $4, $5` +
+		`) WHERE id = $6`
 
 	// run query
-	XOLog(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck, r.ID)
-	_, err = db.Exec(sqlstr, r.Email, r.Password, r.Twofactor, r.Lastcheck, r.ID)
+	XOLog(sqlstr, r.Email, r.Chatid, r.Password, r.Twofactor, r.Lastcheck, r.ID)
+	_, err = db.Exec(sqlstr, r.Email, r.Chatid, r.Password, r.Twofactor, r.Lastcheck, r.ID)
 	return err
 }
 
@@ -108,18 +109,18 @@ func (r *Registration) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.registrations (` +
-		`id, email, password, twofactor, lastcheck` +
+		`id, email, chatid, password, twofactor, lastcheck` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5` +
+		`$1, $2, $3, $4, $5, $6` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, email, password, twofactor, lastcheck` +
+		`id, email, chatid, password, twofactor, lastcheck` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.email, EXCLUDED.password, EXCLUDED.twofactor, EXCLUDED.lastcheck` +
+		`EXCLUDED.id, EXCLUDED.email, EXCLUDED.chatid, EXCLUDED.password, EXCLUDED.twofactor, EXCLUDED.lastcheck` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, r.ID, r.Email, r.Password, r.Twofactor, r.Lastcheck)
-	_, err = db.Exec(sqlstr, r.ID, r.Email, r.Password, r.Twofactor, r.Lastcheck)
+	XOLog(sqlstr, r.ID, r.Email, r.Chatid, r.Password, r.Twofactor, r.Lastcheck)
+	_, err = db.Exec(sqlstr, r.ID, r.Email, r.Chatid, r.Password, r.Twofactor, r.Lastcheck)
 	if err != nil {
 		return err
 	}
@@ -160,32 +161,6 @@ func (r *Registration) Delete(db XODB) error {
 	return nil
 }
 
-// RegistrationByEmail retrieves a row from 'public.registrations' as a Registration.
-//
-// Generated from index 'registrations_email_key'.
-func RegistrationByEmail(db XODB, email string) (*Registration, error) {
-	var err error
-
-	// sql query
-	const sqlstr = `SELECT ` +
-		`id, email, password, twofactor, lastcheck ` +
-		`FROM public.registrations ` +
-		`WHERE email = $1`
-
-	// run query
-	XOLog(sqlstr, email)
-	r := Registration{
-		_exists: true,
-	}
-
-	err = db.QueryRow(sqlstr, email).Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck)
-	if err != nil {
-		return nil, err
-	}
-
-	return &r, nil
-}
-
 // RegistrationByID retrieves a row from 'public.registrations' as a Registration.
 //
 // Generated from index 'registrations_pkey'.
@@ -194,7 +169,7 @@ func RegistrationByID(db XODB, id int) (*Registration, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, email, password, twofactor, lastcheck ` +
+		`id, email, chatid, password, twofactor, lastcheck ` +
 		`FROM public.registrations ` +
 		`WHERE id = $1`
 
@@ -204,7 +179,7 @@ func RegistrationByID(db XODB, id int) (*Registration, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck)
+	err = db.QueryRow(sqlstr, id).Scan(&r.ID, &r.Email, &r.Chatid, &r.Password, &r.Twofactor, &r.Lastcheck)
 	if err != nil {
 		return nil, err
 	}

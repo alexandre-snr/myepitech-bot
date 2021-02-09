@@ -2,14 +2,18 @@ const twofactor = require('node-2fa');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const moment = require('moment');
+const TelegramBot = require('node-telegram-bot-api');
 
 const user = process.argv[2];
 const pwd = process.argv[3];
 const token = process.argv[4];
 const lastCheck = moment(process.argv[5]);
+const chatId = process.argv[6];
 const year = '2020';
 
-console.log(lastCheck.toString());
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN || '', {
+    polling: true,
+});
 
 (async () => {
     const browser = await puppeteer.launch({
@@ -39,6 +43,7 @@ console.log(lastCheck.toString());
     await page.waitForNavigation();
     const jwt = await page.evaluate(() => localStorage.getItem('argos-elm-openidtoken'));
     await page.close();
+    await browser.close();
 
     const res = await fetch('https://api.epitest.eu/me/' + year, {
         headers: {
@@ -49,5 +54,7 @@ console.log(lastCheck.toString());
     const results = await res.json();
     const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
 
-    await browser.close();
+    newResults.forEach((result) => {
+        bot.sendMessage(chatId, `New results for project "${result.project.name}"`);
+    });
  })();

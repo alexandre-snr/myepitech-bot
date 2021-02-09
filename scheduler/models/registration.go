@@ -6,7 +6,7 @@ func Registrations(db XODB) ([]*Registration, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, email, password, twofactor, lastcheck ` +
+		`id, email, password, twofactor, lastcheck, chatid ` +
 		`FROM public.registrations`
 
 	// run query
@@ -23,7 +23,7 @@ func Registrations(db XODB) ([]*Registration, error) {
 		r := Registration{}
 
 		// scan
-		err = q.Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck)
+		err = q.Scan(&r.ID, &r.Email, &r.Password, &r.Twofactor, &r.Lastcheck, &r.Chatid)
 		if err != nil {
 			return nil, err
 		}

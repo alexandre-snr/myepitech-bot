@@ -37,7 +37,7 @@ const cipherPassword = (password) => {
 const addRegistration = async (details) => Registration.create({
   email: details.email,
   password: cipherPassword(details.password),
-  twofactor: details.twofactor,
+  twofactor: cipherPassword(details.twofactor),
   chatid: details.chatid,
   lastcheck: Date.now(),
 });

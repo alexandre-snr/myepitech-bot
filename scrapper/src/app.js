@@ -99,7 +99,7 @@ const fetchResults = async (jwt) => {
 
   const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
   if (newResults.length === 0) {
-    console.log('no new results.');
+    process.exit(0);
     return;
   }
 

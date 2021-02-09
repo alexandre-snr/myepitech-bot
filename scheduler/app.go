@@ -70,6 +70,7 @@ func triggerOne(cli *client.Client, reg *models.Registration) error {
 			reg.Twofactor,
 		},
 		Tty: false,
+		Env: os.Environ(),
 	}, nil, nil, nil, "")
 	if err != nil {
 		return err

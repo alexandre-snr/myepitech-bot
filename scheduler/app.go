@@ -77,7 +77,7 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 		},
 		Tty: false,
 		Env: os.Environ(),
-	}, nil, &network.NetworkingConfig{}, nil, "")
+	}, &container.HostConfig{AutoRemove: true}, &network.NetworkingConfig{}, nil, "")
 	if err != nil {
 		return err
 	}

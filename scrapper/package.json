@@ -1,0 +1,12 @@
+{
+  "name": "scrapper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "node-2fa": "^2.0.0",
+    "node-fetch": "^2.6.1",
+    "puppeteer": "^5.5.0",
+    "tslib": "^2.1.0"
+  }
+}

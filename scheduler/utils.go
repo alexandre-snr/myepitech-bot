@@ -22,6 +22,15 @@ func getDbURL() string {
 	return url
 }
 
+// pkcs7Unpad validates and unpads data from the given bytes slice.
+// The returned value will be 1 to n bytes smaller depending on the
+// amount of padding, where n is the block size.
+func pkcs7Unpad(b []byte) []byte {
+	c := b[len(b)-1]
+	n := int(c)
+	return b[:len(b)-n]
+}
+
 // decipher password from database
 func decipher(password string) string {
 	key, _ := scrypt.Key([]byte(os.Getenv("SECRET")), []byte(os.Getenv("SALT")), 16384, 8, 1, 24)
@@ -34,5 +43,5 @@ func decipher(password string) string {
 	mode := cipher.NewCBCDecrypter(block, iv)
 	mode.CryptBlocks(ciphertext, ciphertext)
 
-	return string(ciphertext)
+	return string(pkcs7Unpad(ciphertext))
 }

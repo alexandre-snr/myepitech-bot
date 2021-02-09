@@ -64,13 +64,15 @@ func triggerAll() error {
 func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error {
 	log.Println("starting container for", reg.Email)
 
+	log.Println("password", decipher(reg.Password))
+
 	resp, err := cli.ContainerCreate(context.Background(), &container.Config{
 		Image: os.Getenv("SCRAP_IMAGE"),
 		Cmd: []string{
 			"node",
 			".",
 			reg.Email,
-			reg.Password,
+			decipher(reg.Password),
 			reg.Twofactor,
 			reg.Lastcheck.Format(time.RFC3339),
 			strconv.FormatInt(reg.Chatid, 10),

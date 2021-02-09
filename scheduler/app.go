@@ -15,6 +15,17 @@ import (
 	"github.com/xo/dburl"
 )
 
+func main() {
+	log.Println("starting scheduler.")
+
+	if os.Getenv("ENV") == "production" {
+		gocron.Every(5).Minutes().Do(task)
+		<-gocron.Start()
+	} else {
+		task()
+	}
+}
+
 func task() {
 	log.Println("starting task.")
 	if err := triggerAll(); err != nil {
@@ -23,12 +34,13 @@ func task() {
 }
 
 func triggerAll() error {
-	db, err := dburl.Open("pgsql://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable")
+	db, err := dburl.Open(getDbURL())
 	if err != nil {
 		return err
 	}
 
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.NewClientWithOpts(client.FromEnv,
+		client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
@@ -50,9 +62,14 @@ func triggerOne(cli *client.Client, reg *models.Registration) error {
 	log.Println("starting container for", reg.Email)
 
 	resp, err := cli.ContainerCreate(context.Background(), &container.Config{
-		Image: "alpine",
-		Cmd:   []string{"echo", reg.Email},
-		Tty:   false,
+		Image: os.Getenv("SCRAP_IMAGE"),
+		Cmd: []string{
+			os.Getenv("SCRAP_COMMAND"),
+			reg.Email,
+			reg.Password,
+			reg.Twofactor,
+		},
+		Tty: false,
 	}, nil, nil, nil, "")
 	if err != nil {
 		return err
@@ -65,15 +82,4 @@ func triggerOne(cli *client.Client, reg *models.Registration) error {
 	}
 
 	return nil
-}
-
-func main() {
-	log.Println("starting scheduler.")
-
-	if os.Getenv("ENV") == "production" {
-		gocron.Every(5).Minutes().Do(task)
-		<-gocron.Start()
-	} else {
-		task()
-	}
 }

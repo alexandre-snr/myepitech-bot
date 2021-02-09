@@ -26,9 +26,12 @@ const setJwtCache = async (jwt) => {
 };
 
 const grabJwt = async () => {
-  const browser = await puppeteer.launch({
-    args: ['--disable-dev-shm-usage'],
-  });
+  const args = process.env.NODE_ENV === 'production' ? [
+    '--no-sandbox',
+    '--disable-setuid-sandbox']
+    : [];
+
+  const browser = await puppeteer.launch({ args });
 
   const page = await browser.newPage();
   await page.goto('https://my.epitech.eu/');

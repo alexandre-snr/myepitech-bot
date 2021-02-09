@@ -10,5 +10,11 @@
     "node-telegram-bot-api": "^0.51.0",
     "puppeteer": "^5.5.0",
     "tslib": "^2.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.19.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "sequelize-auto": "^0.7.10"
   }
 }

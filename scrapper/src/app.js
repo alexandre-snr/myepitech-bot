@@ -26,13 +26,8 @@ const setJwtCache = async (jwt) => {
 };
 
 const grabJwt = async () => {
-  const args = process.env.NODE_ENV === 'production' ? [
-    '--no-sandbox',
-    '--disable-setuid-sandbox']
-    : [];
-
   const browser = await puppeteer.launch({
-    args,
+    args: ['--disable-dev-shm-usage'],
   });
 
   const page = await browser.newPage();

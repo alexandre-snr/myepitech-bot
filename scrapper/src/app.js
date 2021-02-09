@@ -88,6 +88,24 @@ const fetchResults = async (jwt) => {
   return res.json();
 };
 
+const resultToString = (result) => {
+  let buf = `\n=== ${result.project.name} ===\n`;
+
+  const count = Object.keys(result.results.skills).reduce(
+    (acc, key) => acc + result.results.skills[key].count, 0,
+  );
+  const passed = Object.keys(result.results.skills).reduce(
+    (acc, key) => acc + result.results.skills[key].passed, 0,
+  );
+
+  buf += `Coding style:
+  Major: ${result.results.externalItems.find((x) => x.type === 'lint.major').value}
+  Minor: ${result.results.externalItems.find((x) => x.type === 'lint.minor').value}
+  Info : ${result.results.externalItems.find((x) => x.type === 'lint.info').value}
+Score: ${Math.round((passed / count) * 10000) / 100}%`;
+  return buf;
+};
+
 (async () => {
   console.log('starting scrapping for', user);
 
@@ -99,11 +117,11 @@ const fetchResults = async (jwt) => {
 
   const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
   if (newResults.length === 0) {
+    console.log('no new result.');
     process.exit(0);
-    return;
   }
 
-  const message = `New results:${newResults.reduce((acc, val) => `${acc}\n- ${val.project.name}`, '')}`;
+  const message = `New results:${newResults.reduce((acc, val) => `${acc}\n${resultToString(val)}`, '')}`;
   await fetch(process.env.MESSAGE_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

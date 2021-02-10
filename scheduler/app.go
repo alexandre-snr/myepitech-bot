@@ -41,12 +41,14 @@ func triggerAll() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	cli, err := client.NewClientWithOpts(client.FromEnv,
 		client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
+	defer cli.Close()
 
 	reg, err := models.Registrations(db)
 	if err != nil {

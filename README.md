@@ -41,6 +41,10 @@ Everything is Dockerized. There are 2 images to start in order to run the bot. H
   ​      \- `DB_USER` should be your Postgres username
 
   ​      \- `DB_PASSWORD` should be your Postgres password
+  
+  ​      \- `SECRET` should be a secret passphrase used to cipher sensitive data
+  
+  ​      \- `SALT` should be a secret salt used to cipher sensitive data
 
 - Scheduler service:
 
@@ -65,4 +69,8 @@ Everything is Dockerized. There are 2 images to start in order to run the bot. H
   ​      \- `MESSAGE_ENDPOINT` should the the endpoint to the registration service (example: `http://registration:8080/send`)
 
   ​      - `REDIS_URL` should be the URL to the Redis server (example: `redis://cacheServer:6379`)
+  
+  ​      \- `SECRET` should be a secret passphrase used to cipher sensitive data
+  
+  ​      \- `SALT` should be a secret salt used to cipher sensitive data
 

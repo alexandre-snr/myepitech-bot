@@ -1,0 +1,71 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  scrapper:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build scrapper image
+        run: docker build scrapper --tag scrapper
+
+      - name: Log into GitHub Container Registry
+        run: echo "${{ secrets.PAT_PACKAGES }}" | docker login https://ghcr.io -u alexandre-snr --password-stdin
+
+      - name: Push scrapper image to GitHub Container Registry
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/my-scrapper
+          VERSION=latest
+
+          docker tag scrapper $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+  scheduler:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build scheduler image
+        run: docker build scheduler --tag scheduler
+
+      - name: Log into GitHub Container Registry
+        run: echo "${{ secrets.PAT_PACKAGES }}" | docker login https://ghcr.io -u alexandre-snr --password-stdin
+
+      - name: Push scheduler image to GitHub Container Registry
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/my-scheduler
+          VERSION=latest
+
+          docker tag scheduler $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+  registration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build registration image
+        run: docker build registration-bot --tag registration
+
+      - name: Log into GitHub Container Registry
+        run: echo "${{ secrets.PAT_PACKAGES }}" | docker login https://ghcr.io -u alexandre-snr --password-stdin
+
+      - name: Push registration image to GitHub Container Registry
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/my-registration
+          VERSION=latest
+
+          docker tag registration $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION

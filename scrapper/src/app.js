@@ -44,10 +44,6 @@ const grabJwt = async () => {
   await page.type('#passwordInput', pwd);
   await page.click('#submitButton');
   await page.waitForNavigation();
-  await page.waitForSelector('#signInAnotherWay');
-  await page.click('#signInAnotherWay');
-  await page.waitForSelector('div[data-value="PhoneAppOTP"]');
-  await page.click('div[data-value="PhoneAppOTP"]');
   await page.waitForSelector('#idTxtBx_SAOTCC_OTC');
   const newToken = twofactor.generateToken(token);
   await page.type('#idTxtBx_SAOTCC_OTC', newToken.token);

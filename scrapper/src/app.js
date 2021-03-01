@@ -34,6 +34,8 @@ const grabJwt = async () => {
   const browser = await puppeteer.launch({ args });
 
   const page = await browser.newPage();
+  page.setDefaultNavigationTimeout(5000);
+  page.setDefaultTimeout(5000);
   await page.goto('https://my.epitech.eu/');
   await page.click('.mdl-button');
   await page.waitForNavigation();

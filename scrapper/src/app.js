@@ -44,11 +44,21 @@ const grabJwt = async () => {
   await page.type('#passwordInput', pwd);
   await page.click('#submitButton');
   await page.waitForNavigation();
-  await page.waitForSelector('#idTxtBx_SAOTCC_OTC');
+  try {
+    await page.waitForSelector('#idTxtBx_SAOTCC_OTC');
+  } catch (err) {
+    console.error('invalid credentials.');
+    process.exit(-1);
+  }
   const newToken = twofactor.generateToken(token);
   await page.type('#idTxtBx_SAOTCC_OTC', newToken.token);
   await page.click('#idSubmit_SAOTCC_Continue');
-  await page.waitForNavigation();
+  try {
+    await page.waitForNavigation();
+  } catch (err) {
+    console.error('invalid 2fa secret.');
+    process.exit(-1);
+  }
   await page.click('#idBtn_Back');
   await page.waitForNavigation();
 
@@ -105,29 +115,34 @@ Score: ${Math.round((passed / count) * 10000) / 100}%`;
 (async () => {
   console.log('starting scrapping for', user);
 
-  let jwt = await grabJwtFromCache();
-  if (jwt == null) jwt = await grabJwt();
-  const results = await fetchResults(jwt);
+  try {
+    let jwt = await grabJwtFromCache();
+    if (jwt == null) jwt = await grabJwt();
+    const results = await fetchResults(jwt);
 
-  console.log('got', results.length, results.length > 1 ? 'results.' : 'result.');
+    console.log('got', results.length, results.length > 1 ? 'results.' : 'result.');
 
-  const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
-  if (newResults.length === 0) {
-    console.log('no new result.');
+    const newResults = results.filter((r) => (moment(r.date).isAfter(lastCheck)));
+    if (newResults.length === 0) {
+      console.log('no new result.');
+      process.exit(0);
+    }
+
+    const message = `New results:${newResults.reduce((acc, val) => `${acc}\n${resultToString(val)}`, '')}`;
+    await fetch(process.env.MESSAGE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatId,
+        message,
+      }),
+    });
+
+    console.log(newResults.length, newResults.length > 1 ? 'results' : 'result', 'sent.');
+
     process.exit(0);
+  } catch (err) {
+    console.error(err);
+    process.exit(-1);
   }
-
-  const message = `New results:${newResults.reduce((acc, val) => `${acc}\n${resultToString(val)}`, '')}`;
-  await fetch(process.env.MESSAGE_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chatId,
-      message,
-    }),
-  });
-
-  console.log(newResults.length, newResults.length > 1 ? 'results' : 'result', 'sent.');
-
-  process.exit(0);
 })();

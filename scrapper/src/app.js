@@ -104,6 +104,7 @@ const resultToString = (result) => {
     (acc, key) => acc + result.results.skills[key].passed, 0,
   );
 
+  buf += `https://my.epitech.eu/index.html#${year}/all/all/${result.results.testRunId}\n`;
   buf += `Coding style:
   Major: ${result.results.externalItems.find((x) => x.type === 'lint.major').value}
   Minor: ${result.results.externalItems.find((x) => x.type === 'lint.minor').value}

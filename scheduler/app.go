@@ -124,7 +124,7 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 		return err
 	}
 
-	if infos.State.ExitCode != 255 {
+	if infos.State.ExitCode < 0 {
 		out, err := cli.ContainerLogs(context.Background(), resp.ID, types.ContainerLogsOptions{ShowStderr: true})
 		if err != nil {
 			return err

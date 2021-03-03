@@ -1,18 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 	"scheduler/models"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/jasonlvhit/gocron"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/lib/pq"
@@ -58,6 +61,15 @@ func triggerAll() error {
 	for _, r := range reg {
 		if err = triggerOne(db, cli, r); err != nil {
 			log.Println(err)
+			dbErr := models.Error{
+				Email:   r.Email,
+				Created: time.Now(),
+				Error:   strings.ToValidUTF8(err.Error(), ""),
+			}
+			err = dbErr.Save(db)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 	return nil
@@ -79,7 +91,7 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 		},
 		Tty: false,
 		Env: os.Environ(),
-	}, &container.HostConfig{AutoRemove: true}, &network.NetworkingConfig{}, nil, "")
+	}, nil, nil, nil, "")
 	if err != nil {
 		return err
 	}
@@ -97,6 +109,37 @@ func triggerOne(db *sql.DB, cli *client.Client, reg *models.Registration) error 
 		types.ContainerStartOptions{}); err != nil {
 		return err
 	}
+
+	statusCh, errCh := cli.ContainerWait(context.Background(), resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return err
+		}
+	case <-statusCh:
+	}
+
+	infos, err := cli.ContainerInspect(context.Background(), resp.ID)
+	if err != nil {
+		return err
+	}
+
+	if infos.State.ExitCode != 255 {
+		out, err := cli.ContainerLogs(context.Background(), resp.ID, types.ContainerLogsOptions{ShowStderr: true})
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		stdoutput := new(bytes.Buffer)
+		stderror := new(bytes.Buffer)
+		stdcopy.StdCopy(stdoutput, stderror, out)
+
+		cli.ContainerRemove(context.Background(), resp.ID, types.ContainerRemoveOptions{})
+		return errors.New(stderror.String())
+	}
+
+	cli.ContainerRemove(context.Background(), resp.ID, types.ContainerRemoveOptions{})
 
 	reg.Lastcheck = time.Now()
 	return reg.Update(db)
